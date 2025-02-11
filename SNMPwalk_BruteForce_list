@@ -9,7 +9,7 @@ read WORDLIST
 # Loop through each community string in the wordlist
 while IFS= read -r COMMUNITY; do
     echo "Trying community string: $COMMUNITY"
-    snmpwalk -v2c -c "$COMMUNITY" "$TARGET_IP" 1.3.6.1.2.1.1.1.0
+    snmpwalk -v2c -c "$COMMUNITY" "$TARGET_IP"
     if [ $? -eq 0 ]; then
         echo "Success with community string: $COMMUNITY"
         break
