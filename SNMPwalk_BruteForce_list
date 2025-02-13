@@ -3,7 +3,7 @@
 echo "Enter Target IP address: "
 read TARGET_IP
 
-echo "Enter the name of the wordlist (make sure it's in the same directory)
+echo "Enter the name of the wordlist (make sure it's in the same directory): "
 read WORDLIST
 
 # Loop through each community string in the wordlist
