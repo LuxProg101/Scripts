@@ -1,0 +1,178 @@
+#---LUXURYPROG101---
+here's the raw code:
+
+import requests
+from bs4 import BeautifulSoup
+from flask import Flask, render_template_string, request
+import threading
+import tkinter as tk
+from tkinter import messagebox
+
+# Flask app
+app = Flask(__name__)
+
+@app.route('/', methods=['GET', 'POST'])
+def search_page():
+    # Base Steam search URL
+    base_url = "https://store.steampowered.com/search"
+    search_term = request.form.get('search_term', '')  # Get the search term from the form
+    url = f"{base_url}?term={search_term}&supportedlang=english&ndl=1"
+
+    # Fetch data
+    response = requests.get(url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, "lxml")
+    game_list = soup.find_all("div", id="search_resultsRows")
+
+    games_data = []
+    for game_div in game_list:
+        pictures = game_div.find_all("img")
+        pictures = [p['src'] for p in pictures]
+
+        titles = game_div.find_all("span", class_="title")
+        titles = [t.text for t in titles]
+
+        prices = game_div.find_all("div", class_="discount_final_price")
+        prices = [p.text for p in prices]
+
+        links = game_div.find_all("a")
+        links = [l['href'] for l in links]
+
+        games_data = zip(pictures, titles, prices, links)
+
+    # Render HTML template with search bar
+    html_template = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Steam Specials of the week !</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                background-color: #f5f5f5;
+                color: #333;
+            }
+            header {
+                background-color: #1b2838;
+                color: #fff;
+                padding: 1.5rem;
+                text-align: center;
+                font-size: 1.8rem;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 2rem auto;
+                padding: 1rem;
+                background: #fff;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+            }
+            form {
+                margin-bottom: 2rem;
+                text-align: center;
+            }
+            input[type="text"] {
+                width: 70%;
+                padding: 0.5rem;
+                font-size: 1rem;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+            }
+            button {
+                padding: 0.5rem 1rem;
+                font-size: 1rem;
+                color: #fff;
+                background-color: #007bff;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            button:hover {
+                background-color: #0056b3;
+            }
+            .game {
+                display: flex;
+                align-items: center;
+                margin: 1rem 0;
+                padding: 1rem;
+                border-bottom: 1px solid #ddd;
+            }
+            .game img {
+                max-width: 100px;
+                border-radius: 8px;
+                margin-right: 1rem;
+            }
+            .game-info {
+                flex-grow: 1;
+            }
+            .game-info h3 {
+                margin: 0;
+                font-size: 1.2rem;
+            }
+            .game-info p {
+                margin: 0.2rem 0;
+            }
+            .game-info a {
+                text-decoration: none;
+                color: #007bff;
+            }
+            .game-info a:hover {
+                text-decoration: underline;
+            }
+            footer {
+                text-align: center;
+                padding: 1rem;
+                background-color: #1b2838;
+                color: #fff;
+                margin-top: 2rem;
+            }
+        </style>
+    </head>
+    <body>
+        <header>Steam Sales</header>
+        <div class="container">
+            <h1>Games on Sale</h1>
+            <p>Here are some current deals on Steam:</p>
+            <form method="POST" action="/">
+                <input type="text" name="search_term" placeholder="Search for a game..." value="{{ search_term }}">
+                <button type="submit">Search</button>
+            </form>
+            {% if games %}
+                {% for pic, titl, pric, link in games %}
+                    <div class="game">
+                        <img src="{{ pic }}" alt="Game Image">
+                        <div class="game-info">
+                            <h3>{{ titl }}</h3>
+                            <p><strong>Price:</strong> {{ pric }}</p>
+                            <a href="{{ link }}" target="_blank">View on Steam</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No results found. Try searching for another game.</p>
+            {% endif %}
+        </div>
+        
+        <footer>
+            &copy; 2025 Steam Search App
+        </footer>
+    </body>
+    </html>
+    """
+    return render_template_string(html_template, games=games_data, search_term=search_term)
+
+# Function to show the pop-up
+def show_popup():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main tkinter window
+    messagebox.showinfo("Program Running", "The program is running great! Visit http://127.0.0.1:5000")
+    root.destroy()
+
+# Start the Flask app and pop-up in parallel
+if __name__ == '__main__':
+    threading.Thread(target=show_popup).start()
+    app.run(debug=True)
